@@ -11,13 +11,12 @@ def parse_command(instr, bot):
         bot.timebank = int(instr.split(' ')[-1])
     elif instr.startswith('settings time_per_move'):
         bot.time_per_move = int(instr.split(' ')[-1])
-    elif instr.startswith('settings play_names'):
+    elif instr.startswith('settings player_names'):
         bot.players = instr.split(' ')[2:]
-    elif instr.startswith('settings your_bot'):
+    elif instr.startswith('settings your_bot '):
         bot.my_name = instr.split(' ')[-1]
     elif instr.startswith('settings your_botid'):
         myid = int(instr.split(' ')[-1])
-        bot.myid(myid)
         bot.myid = myid
         bot.oppid = 1 if myid == 2 else 2
     elif instr.startswith('settings field_width'):
@@ -35,7 +34,7 @@ def parse_command(instr, bot):
         _, botname, _, points = instr.split(' ')
         bot.points[botname] = int(points)
     else:
-        logging.warn("did not parse command correctly!")
+        logging.warn("did not parse command correctly! {}".format(instr))
     return ''
 
 if __name__ == '__main__':
