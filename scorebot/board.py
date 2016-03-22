@@ -28,3 +28,10 @@ class Board(object):
 
     def legal_moves(self):
         return [ (x, y) for x in range(self.w) for y in range(self.h) if self.is_legal(x, y) ]
+
+    def owns(self, spot, playerid):
+        x,y = spot
+        if 0 <= x < self.w:
+            if 0 <= y < self.h:
+                return self.field[(x,y)] == playerid
+        return False

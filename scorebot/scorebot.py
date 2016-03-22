@@ -12,6 +12,8 @@ class ScoreBot:
         self.points = {}
         self.w = None
         self.h = None
+        self.myid = None
+        self.oppid = None
 
     def setboard_width(self, w):
         logging.info("setting width {}".format(w))
@@ -37,13 +39,6 @@ class ScoreBot:
         logging.info("N move set to {}".format(nmove))
         self.nmove = nmove
 
-    def myid(self, myid):
-        self.myid = myid
-        if myid == 2:
-            self.oppid = 1
-        else:
-            self.oppid = 2
-
     def make_move(self, time):
         return self.best_move(self.currentboard, time)
 
@@ -68,10 +63,72 @@ class ScoreBot:
 
         values = {(x,y): 0.0 for x in range(self.w) for y in range(self.h)}
 
-        center_board_value = 0.5
+        dot_value = 5.0
 
-        #priotize the center
-        values[(self.h/2,self.w/2)] += center_board_value
+        self_neightbor_values = 1.0
+
+        #priotize the dots
+        values[(1*self.h/4,1*self.w/4)] += dot_value
+        values[(1*self.h/4,2*self.w/4)] += dot_value
+        values[(1*self.h/4,3*self.w/4)] += dot_value
+
+        values[(2*self.h/4,1*self.w/4)] += dot_value
+        values[(2*self.h/4,2*self.w/4)] += dot_value
+        values[(2*self.h/4,3*self.w/4)] += dot_value
+
+        values[(3*self.h/4,1*self.w/4)] += dot_value
+        values[(3*self.h/4,2*self.w/4)] += dot_value
+        values[(3*self.h/4,3*self.w/4)] += dot_value
+
+        neightbor_value = {(0,0) : 0.0}
+        neightbor_value[(1,0)] = 2.0
+        neightbor_value[(0,1)] = 2.0
+
+        neightbor_value[(2,0)] = 3.0
+        neightbor_value[(1,1)] = 4.0
+        neightbor_value[(0,2)] = 0.0
+
+        neightbor_value[(3,0)] = -2.0
+        neightbor_value[(2,1)] = 1.0
+        neightbor_value[(1,2)] = -1.0
+        neightbor_value[(0,3)] = -2.0
+
+        neightbor_value[(4,0)] = -200.0
+        neightbor_value[(3,1)] = -200.0
+        neightbor_value[(2,2)] = -200.0
+        neightbor_value[(1,3)] = -200.0
+        neightbor_value[(0,4)] = -200.0
+
+        def plus_stensil(point):
+            px, py = point
+            return [(px + 1, py + 1), (px - 1, py + 1), (px + 1, py - 1), (px - 1, py - 1)]
+
+
+        def square_stensil(point):
+            px, py = point
+            return [(px + x, py + y) for x in (-1, 0, 1) for y in (-1, 0, 1)]
+
+        # #play near ourselves
+        # for spot, v in self.currentboard.field.iteritems():
+        #     logging.info("{}, {}".format(spot, v))
+        #     logging.info("{}, {}".format(v, self.myid))
+        #     if v == self.myid:
+        #         for s in square_stensil(spot):
+        #             values[s] += self_neightbor_values
+
+        #consider neightbors
+        for spot, v in self.currentboard.field.iteritems():
+            if v == 0:
+                mynbs = 0
+                theirnbs = 0
+                for s in plus_stensil(spot):
+                    if self.currentboard.owns(s,self.myid):
+                        mynbs += 1
+                    if self.currentboard.owns(s,self.oppid):
+                        theirnbs += 1
+                values[spot] = neightbor_value[(mynbs,theirnbs)]
+
+
 
 
         legal_values = {k:v for k,v in values.iteritems() if k in board.legal_moves()}
