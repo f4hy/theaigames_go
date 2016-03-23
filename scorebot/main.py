@@ -1,11 +1,15 @@
 #!/usr/bin/env python2
-
+from scorebot import NoGoodMove
 
 def parse_command(instr, bot):
 
     if instr.startswith('action move'):
         time = int(instr.split(' ')[-1])
-        x, y = bot.make_move(time)
+        try:
+            x, y = bot.make_move(time)
+        except NoGoodMove:
+            logging.warn("No good move detected, passing")
+            return 'pass'
         return 'place_move %d %d\n' % (x, y)
     elif instr.startswith('settings timebank'):
         bot.timebank = int(instr.split(' ')[-1])
