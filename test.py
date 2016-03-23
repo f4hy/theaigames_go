@@ -25,7 +25,10 @@ def main(options):
             # Send inputs to bot
             move = send_update(bot, round_num, move, field)
             # Update macroboard and game field
-            field = update_field(field, move, str(bot_id), h, w)
+            if move == "pass":
+                pass
+            else:
+                field = update_field(field, move, str(bot_id), h, w)
             print_board(field, h, w, round_num, move)
             round_num += 1
 
@@ -40,13 +43,12 @@ def get_bots(options):
     bot_list = '\n'.join(
         ['{}. {}'.format(i, bot) for i, bot in enumerate(bots)])
 
-
-    if not options.bot1:
+    if options.bot1 is None:
         bot1_name = bots[int(raw_input(
             'Choose Player 1:\n' + bot_list + '\n\n> '))]
     else:
         bot1_name = bots[options.bot1]
-    if not options.bot2:
+    if options.bot2 is None:
         bot2_name = bots[int(raw_input(
             'Choose Player 2:\n' + bot_list + '\n\n> '))]
     else:
