@@ -1,8 +1,8 @@
 from random import randint
 import logging
 import board
-import sb_logic
 import stensils
+import math
 from collections import defaultdict
 
 class NoGoodMove(Exception):
@@ -18,6 +18,8 @@ class ScoreBot:
         self.h = None
         self.myid = None
         self.oppid = None
+        self.mydead = []
+        self.theirdead = []
 
     def setboard_width(self, w):
         logging.info("setting width {}".format(w))
@@ -36,7 +38,9 @@ class ScoreBot:
 
     def update_currentboard(self, fstring):
         logging.info("updating board")
-        self.currentboard.setboard(fstring)
+        dead = self.currentboard.setboard(fstring)
+        self.mydead.extend(dead[self.myid])
+        self.theirdead.extend(dead[self.oppid])
 
 
     def set_movenumb(self, nmove):
@@ -75,7 +79,7 @@ class ScoreBot:
 
         whole_board = [(x,y) for x in range(self.w) for y in range(self.h)]
 
-        dot_value = 3.0
+        dot_value = 0.5
 
         self_neightbor_values = 1.0
 
@@ -117,7 +121,20 @@ class ScoreBot:
         kill_value = +11.0
         save_value = +6.0
 
+        mydead_value = -2.0
+        theirdead_value = -1.0
+
+        owned_value = -2000.0
+
         my_lms = board.legal_moves(self.myid)
+
+        eye_value = -2000.00
+
+        #squared people died on we shouldnt play again
+        for x,y in self.mydead:
+            values[(x,y)] += mydead_value
+        for x,y in self.theirdead:
+            values[(x,y)] += theirdead_value
 
         for x,y in my_lms:
             #board edge is bad
@@ -142,20 +159,39 @@ class ScoreBot:
                         values[(mx,my)] += save_value
 
 
+        # save our groups!
+        for x,y in (s for s in whole_board if board.field[s] == self.myid):
+            filled, libs = board.fill_liberties(x,y)
+            if len(filled) > 1 and len(libs) == 1:
+                values[libs[0]] += save_value*len(filled)
+            else:
+                for l in libs:
+                    lx,ly = l
+                    if board.liberties(lx,ly, self.myid) > 2:
+                        values[l] += len(filled)*save_value/len(libs)
+
+        # # dont fill eyes!
+        # for x,y in my_lms:
+        #     if all(board.field[mx,my] in [self.myid,5] for mx,my in stensils.plus((x,y))):
+        #         logging.warn("{} {} is and eye!!!".format(x,y))
+        #         exit(-1)
+        #         values[(x,y)] += eye_value
+
+        # check owned areas
+        if self.gameround > math.sqrt(self.h*self.w):
+            logging.info("checking ownership")
+            for x,y in my_lms:
+                o = board.owned(x,y)
+                if o is not None:
+                    logging.info("{} owns {}".format(o,(x,y)))
+                    values[(x,y)] += owned_value
 
 
-        # for spot, v in self.currentboard.field.iteritems():
-        #     if v == 0:
-        #         mynbs = 0
-        #         theirnbs = 0
-        #         for s in stensil.plus(spot):
-        #             if self.currentboard.owns(s,self.myid):
-        #                 mynbs += 1
-        #             if self.currentboard.owns(s,self.oppid):
-        #                 theirnbs += 1
-        #         values[spot] += neightbor_value[(mynbs,theirnbs)]
 
-
+        for x,y in (s for s in whole_board if board.field[s] == self.oppid):
+            filled, libs = board.fill_liberties(x,y)
+            if len(filled) > 1 and len(libs) == 1:
+                values[libs[0]] += kill_value*len(filled)
 
 
         self.print_values(values, board)
@@ -168,9 +204,9 @@ class ScoreBot:
         def fp(x,y):
             field = board.field[(x,y)]
             if field == self.myid:
-                return "M"
+                return "x"
             if field == self.oppid:
-                return "E"
+                return "+"
             return "{}".format(field)
 
         def fv(x,y):
@@ -178,7 +214,7 @@ class ScoreBot:
             if v < 0:
                 return "N"
             if v > 9:
-                return "+"
+                return "*"
             if v == 0:
                 return '.'
             return "{:d}".format(int(v))
