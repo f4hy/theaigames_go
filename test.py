@@ -4,6 +4,7 @@ import sys
 from subprocess import Popen, PIPE, STDOUT
 import argparse
 import math
+import scorebot.board as bd
 
 def main(options):
     # Get robots who are fighting (player1, player2)
@@ -13,14 +14,24 @@ def main(options):
         field = options.setboard
         size = len(field.split(","))
         h = w = int(math.sqrt(size))
+        board = bd.Board(w, h)
     else:
         h, w = 9, 9
         field = ','.join(['0'] * h*w)
+        board = bd.Board(w, h)
+
+    board.setboard(field)
+
+
     send_init('1', bot1, h, w)
     send_init('2', bot2, h, w)
     round_num = 1
     move = 1
-    print_board(field, h, w, round_num, '')
+    print_board(board.fieldstring(), h, w, round_num, '')
+
+    print board.fieldstring()
+    print field
+
     win1 = win2 = 0
     while win1 + win2 < options.games:
         for bot_id, bot in [('1', bot1), ('2', bot2)]:
@@ -28,18 +39,23 @@ def main(options):
             if not options.nowait:
                 raw_input()
             # Send inputs to bot
-            move = send_update(bot, round_num, move, field)
+            move = send_update(bot, round_num, move, board.fieldstring())
             # Update macroboard and game field
-            print move
-            print move
             if move.startswith("pass"):
                 print "pass detected"
             else:
-                field = update_field(field, move, str(bot_id), h, w)
-            print_board(field, h, w, round_num, move)
-            print move
-            print move
+                update_field(board, move, str(bot_id), h, w)
+            print_board(board.fieldstring(), h, w, round_num, move)
             round_num += 1
+            if round_num > 150:
+                fs = board.fieldstring()
+                if fs.count(1) > fs.count(2):
+                    print "bot1 wins"
+                    win1 += 1
+                if fs.count(1) < fs.count(2):
+                    print "bot2 wins"
+                    win2 += 1
+
 
 
 
@@ -108,19 +124,34 @@ def send_update(bot, round_num, move, field):
     return out
 
 
-def update_field(field, move, bot_id, h, w):
-    col, row = move.split(' ')[1:3]
-    arr = field.split(',')
-    index = int(row) * w + int(col)
-    if arr[index] != '0':
+def update_field(board, move, bot_id, h, w):
+    col, row = map(int, move.split(' ')[1:3])
+    # arr = field.split(',')
+    # index = int(row) * w + int(col)
+    print board.field
+    print board.field.values()
+    print board.field.keys()
+    print (col,row) in board.field.keys()
+    print col, row
+    print board.field[(col,row)]
+    if board.field[(col,row)] != 0:
         raise RuntimeError(
             'Square {col} {row} already occupied by {occ}.'.format(
-                col=col, row=row, occ=arr[index]))
+                col=col, row=row, occ=board.field[(col,row)]))
 
-    arr[index] = bot_id
-    return ','.join(arr)
+    board.field[(col,row)] = int(bot_id)
 
+    dead = []
 
+    for sx,sy in [s for s,v in board.field.iteritems() if v in [1,2]]:
+        filled, liberties = board.fill_liberties(sx,sy)
+        print "{} has {}".format(filled,liberties)
+        if len(liberties) < 1:
+            dead.extend(filled)
+
+    for d in dead:
+        print "KILLING {}".format(d)
+        board.field[d] = 0
 
 
 def print_board(field, h, w, round_num, move):
@@ -132,8 +163,8 @@ def print_board(field, h, w, round_num, move):
         msg += "\n"
 
     sys.stderr.write("\x1b[2J\x1b[H")  # clear screen
-    msg += '\nRound {} \nfield: {}\nmove: {}\n'.format(
-        round_num, field, move)
+    msg += '\nRound {} bot1:{} bot2:{} \nfield: {}\nmove: {}\n'.format(
+        round_num, field.count("1"), field.count("2"), field, move)
 
     sys.stdout.write(msg)
 
