@@ -2,6 +2,8 @@ from random import randint
 import logging
 import board
 import sb_logic
+import stensils
+from collections import defaultdict
 
 class NoGoodMove(Exception):
     pass
@@ -48,12 +50,13 @@ class ScoreBot:
         logging.info("get_move {} {}".format(board, tleft))
 
         values = self.set_values(board)
-        logging.info("values {}".format(values))
+        # logging.info("values {}".format(values))
 
         best_moves = [k for k,v in values.iteritems() if v == max(values.values())]
 
         if max(values.values()) < 0.0:
             logging.warn("best move is negative value, passing")
+            logging.warn("values: {}".format(values))
             raise NoGoodMove
 
         logging.info("best moves {}".format(best_moves))
@@ -68,9 +71,11 @@ class ScoreBot:
 
     def set_values(self, board):
 
-        values = {(x,y): 0.0 for x in range(self.w) for y in range(self.h)}
+        values = defaultdict(lambda: 0.0)
 
-        dot_value = 10.0
+        whole_board = [(x,y) for x in range(self.w) for y in range(self.h)]
+
+        dot_value = 3.0
 
         self_neightbor_values = 1.0
 
@@ -87,7 +92,6 @@ class ScoreBot:
         values[(3*self.h/4,2*self.w/4)] += dot_value
         values[(3*self.h/4,3*self.w/4)] += dot_value
 
-        logging.info("WTF {}".format(values))
 
         neightbor_value = {(0,0) : 0.0}
         neightbor_value[(1,0)] = 2.0
@@ -102,51 +106,67 @@ class ScoreBot:
         neightbor_value[(1,2)] = -1.0
         neightbor_value[(0,3)] = -2.0
 
-        neightbor_value[(4,0)] = -200.0
-        neightbor_value[(3,1)] = -200.0
-        neightbor_value[(2,2)] = -200.0
-        neightbor_value[(1,3)] = -200.0
-        neightbor_value[(0,4)] = -200.0
+        liberty_value = {0 : -200.0}
+        liberty_value[1] = -1.0
+        liberty_value[2] = 2.0
+        liberty_value[3] = 3.0
+        liberty_value[4] = 1.0
 
-        def plus_stensil(point):
-            px, py = point
-            return [(px + 1, py), (px - 1, py), (px, py - 1), (px, py - 1)]
+        edge_value = -2.5
+
+        kill_value = +11.0
+        save_value = +6.0
+
+        my_lms = board.legal_moves(self.myid)
+
+        for x,y in my_lms:
+            #board edge is bad
+            if x == 0 or x == self.w-1 or y == 0 or y == self.h-1:
+                values[(x,y)] += edge_value
+
+            # set liberty value
+            values[(x,y)] += liberty_value[board.liberties(x,y, self.myid)]
+
+        # kill
+        for x,y in (s for s in whole_board if board.field[s] == self.oppid):
+            if board.liberties(x,y, self.oppid) == 1:
+                for m in stensils.plus((x,y)):
+                    values[m] += kill_value
+
+        # save
+        for x,y in (s for s in whole_board if board.field[s] == self.myid):
+            mylib = board.liberties(x,y, self.myid)
+            if mylib in [1,2]:
+                for mx,my in stensils.plus((x,y)):
+                    if board.liberties(mx,my, self.myid) > mylib:
+                        values[(mx,my)] += save_value
 
 
-        def square_stensil(point):
-            px, py = point
-            return [(px + x, py + y) for x in (-1, 0, 1) for y in (-1, 0, 1)]
 
-        # #play near ourselves
+
         # for spot, v in self.currentboard.field.iteritems():
-        #     logging.info("{}, {}".format(spot, v))
-        #     logging.info("{}, {}".format(v, self.myid))
-        #     if v == self.myid:
-        #         for s in square_stensil(spot):
-        #             values[s] += self_neightbor_values
-
-        #consider neightbors
-        for spot, v in self.currentboard.field.iteritems():
-            if v == 0:
-                mynbs = 0
-                theirnbs = 0
-                for s in plus_stensil(spot):
-                    if self.currentboard.owns(s,self.myid):
-                        mynbs += 1
-                    if self.currentboard.owns(s,self.oppid):
-                        theirnbs += 1
-                values[spot] += neightbor_value[(mynbs,theirnbs)]
+        #     if v == 0:
+        #         mynbs = 0
+        #         theirnbs = 0
+        #         for s in stensil.plus(spot):
+        #             if self.currentboard.owns(s,self.myid):
+        #                 mynbs += 1
+        #             if self.currentboard.owns(s,self.oppid):
+        #                 theirnbs += 1
+        #         values[spot] += neightbor_value[(mynbs,theirnbs)]
 
 
-        self.print_values(values)
 
-        legal_values = {k:v for k,v in values.iteritems() if k in board.legal_moves()}
+
+        self.print_values(values, board)
+
+        legal_values = {k:v for k,v in values.iteritems() if k in my_lms}
         return legal_values
 
-    def print_values(self, values):
+    def print_values(self, values, board):
         boardstring = "board and values:\n"
         def fp(x,y):
-            field = self.currentboard.field[(x,y)]
+            field = board.field[(x,y)]
             if field == self.myid:
                 return "M"
             if field == self.oppid:
@@ -155,7 +175,6 @@ class ScoreBot:
 
         def fv(x,y):
             v = values[(x,y)]
-            logging.info("{},{},{}".format(x,y,v))
             if v < 0:
                 return "N"
             if v > 9:
@@ -164,14 +183,33 @@ class ScoreBot:
                 return '.'
             return "{:d}".format(int(v))
 
+        def fl(x,y, ID):
+            l = board.liberties(x,y, ID)
+            if l < 0:
+                return "N"
+            if l > 9:
+                return "+"
+            if l == 0:
+                return '.'
+            return "{:d}".format(int(l))
 
-        for x in range(self.w):
-            for y in range(self.h):
+
+
+        for y in range(self.h):
+            for x in range(self.w):
                 f = fp(x,y)
                 if f == '0':
                     boardstring += fv(x,y)
                 else:
                     boardstring += f
+            boardstring += "|   |"
+            for x in range(self.w):
+                boardstring += fl(x,y,self.myid)
+            boardstring += "|   |"
+            for x in range(self.w):
+                boardstring += fl(x,y,self.oppid)
+
+
             boardstring += "\n"
         # logging.info(boardstring.replace('0','.'))
         logging.info(boardstring)

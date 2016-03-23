@@ -9,7 +9,7 @@ def parse_command(instr, bot):
             x, y = bot.make_move(time)
         except NoGoodMove:
             logging.warn("No good move detected, passing")
-            return 'pass'
+            return 'pass\n'
         return 'place_move %d %d\n' % (x, y)
     elif instr.startswith('settings timebank'):
         bot.timebank = int(instr.split(' ')[-1])
