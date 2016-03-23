@@ -3,18 +3,23 @@ import os
 import sys
 from subprocess import Popen, PIPE, STDOUT
 import argparse
-
+import math
 
 def main(options):
     # Get robots who are fighting (player1, player2)
     bot1, bot2 = get_bots(options)
     # Simulate game init input
-    h, w = 9, 9
+    if options.setboard is not None:
+        field = options.setboard
+        size = len(field.split(","))
+        h = w = int(math.sqrt(size))
+    else:
+        h, w = 9, 9
+        field = ','.join(['0'] * h*w)
     send_init('1', bot1, h, w)
     send_init('2', bot2, h, w)
     round_num = 1
     move = 1
-    field = ','.join(['0'] * h*w)
     print_board(field, h, w, round_num, '')
     win1 = win2 = 0
     while win1 + win2 < options.games:
@@ -25,11 +30,15 @@ def main(options):
             # Send inputs to bot
             move = send_update(bot, round_num, move, field)
             # Update macroboard and game field
-            if move == "pass":
-                pass
+            print move
+            print move
+            if move.startswith("pass"):
+                print "pass detected"
             else:
                 field = update_field(field, move, str(bot_id), h, w)
             print_board(field, h, w, round_num, move)
+            print move
+            print move
             round_num += 1
 
 
@@ -144,6 +153,7 @@ if __name__ == '__main__':
     parser.add_argument("-g", "--games", type=int, default=1)
     parser.add_argument("-b1", "--bot1", type=int, default=None)
     parser.add_argument("-b2", "--bot2", type=int, default=None)
+    parser.add_argument("-s", "--setboard", type=str, default=None)
 
     args = parser.parse_args()
 
