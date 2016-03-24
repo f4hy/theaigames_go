@@ -13,6 +13,9 @@ class Board(object):
         self.field = defaultdict(lambda: 5, f)
         self.w = w
         self.h = h
+        self.ownercache = {}
+        self.groupliberties = {}
+
 
     def setboard(self, fstr):
         old = self.field
@@ -28,6 +31,9 @@ class Board(object):
                 self.field[(x,y)] = new
         # logging.info("field {}".format(self.field))
         # logging.info("board \n{}".format(pprint_field(self.field)))
+
+        self.ownercache.clear()
+        self.groupliberties.clear()
         return died
 
     def fieldstring(self):
@@ -41,6 +47,9 @@ class Board(object):
         return liberty
 
     def fill_liberties(self, x, y):
+        if (x,y) in self.groupliberties.keys():
+            return self.groupliberties[(x,y)]
+
         target = self.field[(x,y)]
         checked = []
         liberties = []
@@ -55,13 +64,18 @@ class Board(object):
                 dq.extend(i for i in stensils.plus(current) if i not in checked)
             if self.field[current] == 0:
                 liberties.append(current)
+
+        for f in filled:
+            self.groupliberties[f] = (filled, liberties)
         return filled, liberties
 
     def owned(self, x, y):
+        if (x,y) in self.ownercache.keys():
+            return self.ownercache[(x,y)]
 
         target = 0
         checked = []
-        edge = None
+        ownedby = None
         filled = [(x,y)]
         dq = deque(stensils.plus((x,y)))
 
@@ -70,14 +84,19 @@ class Board(object):
             checked.append(current)
             if self.field[current] == target:
                 filled.append(current)
-                dq.extend(i for i in stensils.plus(current) if i not in checked)
+                toadd = [i for i in stensils.plus(current) if i not in checked]
+                dq.extend(toadd)
             if self.field[current] != 0:
-                if edge is None:
-                    edge = self.field[current]
+                if ownedby is None:
+                    ownedby = self.field[current]
                 else:
-                    if edge != self.field[current]:
-                        return None
-        return edge
+                    if ownedby != self.field[current]:
+                        if self.field[current] != 5:
+                            ownedby = None
+                            break
+        for f in filled:
+            self.ownercache[f] = ownedby
+        return ownedby
 
 
 

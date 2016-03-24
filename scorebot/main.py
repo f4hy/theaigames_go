@@ -62,6 +62,9 @@ if __name__ == '__main__':
         formatter = logging.Formatter('SCOREBOT %(levelname)s: %(message)s')
         logfilehandler.setFormatter(formatter)
         root.addHandler(logfilehandler)
+    else:
+        logging.basicConfig(format='SCOREBOT %(levelname)s: %(message)s', level=logging.DEBUG)
+
 
     logging.info("starting logging")
 

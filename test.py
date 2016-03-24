@@ -15,17 +15,18 @@ def main(options):
         size = len(field.split(","))
         h = w = int(math.sqrt(size))
         board = bd.Board(w, h)
+        round_num = field.count("1") + field.count("2")
     else:
         h, w = 9, 9
         field = ','.join(['0'] * h*w)
         board = bd.Board(w, h)
+        round_num = 1
 
     board.setboard(field)
 
 
     send_init('1', bot1, h, w)
     send_init('2', bot2, h, w)
-    round_num = 1
     move = 1
     print_board(board.fieldstring(), h, w, round_num, '')
 

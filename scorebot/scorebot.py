@@ -3,6 +3,7 @@ import logging
 import board
 import stensils
 import math
+from pprint import print_values
 from collections import defaultdict
 
 class NoGoodMove(Exception):
@@ -76,6 +77,7 @@ class ScoreBot:
     def set_values(self, board):
 
         values = defaultdict(lambda: 0.0)
+        owners = defaultdict(lambda: 0)
 
         whole_board = [(x,y) for x in range(self.w) for y in range(self.h)]
 
@@ -89,7 +91,7 @@ class ScoreBot:
         values[(1*self.h/4,3*self.w/4)] += dot_value
 
         values[(2*self.h/4,1*self.w/4)] += dot_value
-        values[(2*self.h/4,2*self.w/4)] += dot_value
+        #values[(2*self.h/4,2*self.w/4)] += dot_value
         values[(2*self.h/4,3*self.w/4)] += dot_value
 
         values[(3*self.h/4,1*self.w/4)] += dot_value
@@ -184,8 +186,8 @@ class ScoreBot:
                 o = board.owned(x,y)
                 if o is not None:
                     logging.info("{} owns {}".format(o,(x,y)))
+                    owners[(x,y)] = o
                     values[(x,y)] += owned_value
-
 
 
         for x,y in (s for s in whole_board if board.field[s] == self.oppid):
@@ -194,59 +196,7 @@ class ScoreBot:
                 values[libs[0]] += kill_value*len(filled)
 
 
-        self.print_values(values, board)
+        print_values(board, values, owners)
 
         legal_values = {k:v for k,v in values.iteritems() if k in my_lms}
         return legal_values
-
-    def print_values(self, values, board):
-        boardstring = "board and values:\n"
-        def fp(x,y):
-            field = board.field[(x,y)]
-            if field == self.myid:
-                return "x"
-            if field == self.oppid:
-                return "+"
-            return "{}".format(field)
-
-        def fv(x,y):
-            v = values[(x,y)]
-            if v < 0:
-                return "N"
-            if v > 9:
-                return "*"
-            if v == 0:
-                return '.'
-            return "{:d}".format(int(v))
-
-        def fl(x,y, ID):
-            l = board.liberties(x,y, ID)
-            if l < 0:
-                return "N"
-            if l > 9:
-                return "+"
-            if l == 0:
-                return '.'
-            return "{:d}".format(int(l))
-
-
-
-        for y in range(self.h):
-            for x in range(self.w):
-                f = fp(x,y)
-                if f == '0':
-                    boardstring += fv(x,y)
-                else:
-                    boardstring += f
-            boardstring += "|   |"
-            for x in range(self.w):
-                boardstring += fl(x,y,self.myid)
-            boardstring += "|   |"
-            for x in range(self.w):
-                boardstring += fl(x,y,self.oppid)
-
-
-            boardstring += "\n"
-        # logging.info(boardstring.replace('0','.'))
-        logging.info(boardstring)
-        return
