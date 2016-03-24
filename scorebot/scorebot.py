@@ -159,16 +159,16 @@ class ScoreBot:
                         values[(mx,my)] += save_value
 
 
-        # save our groups!
-        for x,y in (s for s in whole_board if board.field[s] == self.myid):
-            filled, libs = board.fill_liberties(x,y)
-            if len(filled) > 1 and len(libs) == 1:
-                values[libs[0]] += save_value*len(filled)
-            else:
-                for l in libs:
-                    lx,ly = l
-                    if board.liberties(lx,ly, self.myid) > 2:
-                        values[l] += len(filled)*save_value/len(libs)
+        # # save our groups!
+        # for x,y in (s for s in whole_board if board.field[s] == self.myid):
+        #     filled, libs = board.fill_liberties(x,y)
+        #     if len(filled) > 1 and len(libs) == 1:
+        #         values[libs[0]] += save_value*len(filled)
+        #     else:
+        #         for l in libs:
+        #             lx,ly = l
+        #             if board.liberties(lx,ly, self.myid) > 2:
+        #                 values[l] += len(filled)*save_value/len(libs)
 
         # # dont fill eyes!
         # for x,y in my_lms:

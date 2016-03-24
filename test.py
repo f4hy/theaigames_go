@@ -128,12 +128,6 @@ def update_field(board, move, bot_id, h, w):
     col, row = map(int, move.split(' ')[1:3])
     # arr = field.split(',')
     # index = int(row) * w + int(col)
-    print board.field
-    print board.field.values()
-    print board.field.keys()
-    print (col,row) in board.field.keys()
-    print col, row
-    print board.field[(col,row)]
     if board.field[(col,row)] != 0:
         raise RuntimeError(
             'Square {col} {row} already occupied by {occ}.'.format(
@@ -145,7 +139,6 @@ def update_field(board, move, bot_id, h, w):
 
     for sx,sy in [s for s,v in board.field.iteritems() if v in [1,2]]:
         filled, liberties = board.fill_liberties(sx,sy)
-        print "{} has {}".format(filled,liberties)
         if len(liberties) < 1:
             dead.extend(filled)
 
