@@ -194,6 +194,10 @@ class ScoreBot:
             filled, libs = board.fill_liberties(x,y)
             if len(filled) > 1 and len(libs) == 1:
                 values[libs[0]] += kill_value*len(filled)
+            if len(filled) > 3 and 2*len(libs) <= len(filled):
+                for l in libs:
+                    values[l] += (kill_value*len(filled))/(2.0 * len(libs))
+
 
 
         print_values(board, values, owners)

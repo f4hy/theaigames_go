@@ -17,7 +17,7 @@ def main(options):
         board = bd.Board(w, h)
         round_num = field.count("1") + field.count("2")
     else:
-        h, w = 9, 9
+        h, w = 15, 15
         field = ','.join(['0'] * h*w)
         board = bd.Board(w, h)
         round_num = 1
