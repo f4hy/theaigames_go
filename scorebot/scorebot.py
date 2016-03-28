@@ -81,22 +81,22 @@ class ScoreBot:
 
         whole_board = [(x,y) for x in range(self.w) for y in range(self.h)]
 
-        dot_value = 0.5
+        dot_value = 1.5
 
         self_neightbor_values = 1.0
 
         #priotize the dots
-        values[(1*self.h/4,1*self.w/4)] += dot_value
+        values[(1*self.h/4,1*self.w/4)] += dot_value*2
         values[(1*self.h/4,2*self.w/4)] += dot_value
-        values[(1*self.h/4,3*self.w/4)] += dot_value
+        values[(1*self.h/4,3*self.w/4)] += dot_value*2
 
         values[(2*self.h/4,1*self.w/4)] += dot_value
         #values[(2*self.h/4,2*self.w/4)] += dot_value
         values[(2*self.h/4,3*self.w/4)] += dot_value
 
-        values[(3*self.h/4,1*self.w/4)] += dot_value
+        values[(3*self.h/4,1*self.w/4)] += dot_value*2
         values[(3*self.h/4,2*self.w/4)] += dot_value
-        values[(3*self.h/4,3*self.w/4)] += dot_value
+        values[(3*self.h/4,3*self.w/4)] += dot_value*2
 
 
         neightbor_value = {(0,0) : 0.0}
@@ -121,12 +121,12 @@ class ScoreBot:
         edge_value = -2.5
 
         kill_value = +11.0
-        save_value = +6.0
+        save_value = +11.0
 
         mydead_value = -2.0
         theirdead_value = -1.0
 
-        owned_value = -2000.0
+        owned_value = -200.0
 
         my_lms = board.legal_moves(self.myid)
 
@@ -194,7 +194,10 @@ class ScoreBot:
             filled, libs = board.fill_liberties(x,y)
             if len(filled) > 1 and len(libs) == 1:
                 values[libs[0]] += kill_value*len(filled)
-            if len(filled) > 3 and len(libs) <= len(filled):
+            if len(filled) == 1 and len(libs) == 2:
+                for l in libs:
+                    values[l] += 1.0
+            if len(filled) > 2 and len(libs) <= len(filled):
                 for l in libs:
                     values[l] += (kill_value*len(filled))/(2.0 * len(libs))
 

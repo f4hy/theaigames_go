@@ -30,7 +30,7 @@ def parse_command(instr, bot):
     elif instr.startswith('update game round'):
         bot.gameround = (int(instr.split(' ')[-1]))
     elif instr.startswith('update game move'):
-        bot.set_movenumb(int(instr.split(' ')[-1]))
+        bot.set_movenumb(instr)
     elif instr.startswith('update game field'):
         fstr = instr.split(' ')[-1]
         bot.update_currentboard(fstr)
