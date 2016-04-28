@@ -36,7 +36,7 @@ def parse_command(instr, bot):
         bot.update_currentboard(fstr)
     elif "points" in instr:
         _, botname, _, points = instr.split(' ')
-        bot.points[botname] = int(points)
+        bot.points[botname] = float(points)
     else:
         logging.warn("did not parse command correctly! {}".format(instr))
     return ''
