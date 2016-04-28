@@ -1,26 +1,23 @@
 #!/usr/bin/env python2
-from scorebot import NoGoodMove
+
 
 def parse_command(instr, bot):
 
     if instr.startswith('action move'):
         time = int(instr.split(' ')[-1])
-        try:
-            x, y = bot.make_move(time)
-        except NoGoodMove:
-            logging.warn("No good move detected, passing")
-            return 'pass\n'
+        x, y = bot.make_move(time)
         return 'place_move %d %d\n' % (x, y)
     elif instr.startswith('settings timebank'):
         bot.timebank = int(instr.split(' ')[-1])
     elif instr.startswith('settings time_per_move'):
         bot.time_per_move = int(instr.split(' ')[-1])
-    elif instr.startswith('settings player_names'):
+    elif instr.startswith('settings play_names'):
         bot.players = instr.split(' ')[2:]
-    elif instr.startswith('settings your_bot '):
+    elif instr.startswith('settings your_bot'):
         bot.my_name = instr.split(' ')[-1]
     elif instr.startswith('settings your_botid'):
         myid = int(instr.split(' ')[-1])
+        bot.myid(myid)
         bot.myid = myid
         bot.oppid = 1 if myid == 2 else 2
     elif instr.startswith('settings field_width'):
@@ -30,7 +27,7 @@ def parse_command(instr, bot):
     elif instr.startswith('update game round'):
         bot.gameround = (int(instr.split(' ')[-1]))
     elif instr.startswith('update game move'):
-        bot.set_movenumb(instr)
+        bot.set_movenumb(int(instr.split(' ')[-1]))
     elif instr.startswith('update game field'):
         fstr = instr.split(' ')[-1]
         bot.update_currentboard(fstr)
@@ -38,7 +35,7 @@ def parse_command(instr, bot):
         _, botname, _, points = instr.split(' ')
         bot.points[botname] = float(points)
     else:
-        logging.warn("did not parse command correctly! {}".format(instr))
+        logging.warn("did not parse command correctly!")
     return ''
 
 if __name__ == '__main__':
@@ -62,9 +59,6 @@ if __name__ == '__main__':
         formatter = logging.Formatter('SCOREBOT %(levelname)s: %(message)s')
         logfilehandler.setFormatter(formatter)
         root.addHandler(logfilehandler)
-    else:
-        logging.basicConfig(format='SCOREBOT %(levelname)s: %(message)s', level=logging.DEBUG)
-
 
     logging.info("starting logging")
 

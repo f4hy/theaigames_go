@@ -50,12 +50,16 @@ def main(options):
             round_num += 1
             if round_num > 150:
                 fs = board.fieldstring()
-                if fs.count(1) > fs.count(2):
+                print fs
+                print type(fs)
+                if fs.count('1') > fs.count('2'):
                     print "bot1 wins"
                     win1 += 1
-                if fs.count(1) < fs.count(2):
+                    return 1
+                if fs.count('1') < fs.count('2'):
                     print "bot2 wins"
                     win2 += 1
+                    return 2
 
 
 
@@ -104,7 +108,8 @@ def send_init(bot_id, bot, h, w):
         'settings your_bot player{bot_id}\n'
         'settings your_botid {bot_id}\n'
         'settings field_width {width}\n'
-        'settings field_height {height}\n'.format(bot_id=bot_id, width=w, height=h))
+        'settings field_height {height}\n'
+        'settings max_rounds {maxrounds}\n'.format(bot_id=bot_id, width=w, height=h, maxrounds=250))
 
     bot.stdin.write(init_input)
 
@@ -114,9 +119,13 @@ def send_update(bot, round_num, move, field):
         'update game round {round}\n'
         'update game move {move}\n'
         'update game field {field}\n'
+        'update player1 points {player1points}\n'
+        'update player2 points {player2points}\n'
         'action move 10000\n'.format(
             round=round_num,
             move=move,
+            player1points=0.0,
+            player2points=0.0,
             field=field))
 
     bot.stdin.write(update_input)
@@ -182,7 +191,7 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    wins = {'1': 0, '2':0}
+    wins = {1: 0, 2:0}
     for i in range(args.games):
         winner = main(args)
         wins[winner] += 1
