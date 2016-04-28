@@ -21,6 +21,7 @@ class ScoreBot:
         self.oppid = None
         self.mydead = []
         self.theirdead = []
+        self.threshold = 0
 
     def setboard_width(self, w):
         logging.info("setting width {}".format(w))
@@ -59,10 +60,12 @@ class ScoreBot:
 
         best_moves = [k for k,v in values.iteritems() if v == max(values.values())]
 
-        if max(values.values()) < 0.0:
-            logging.warn("best move is negative value, passing")
+        if max(values.values()) < self.threshold:
+            logging.warn("best move is below threshold, passing")
             logging.warn("values: {}".format(values))
+            self.threshold -= (self.threshold - max(values.values()))+5
             raise NoGoodMove
+
 
         logging.info("best moves {}".format(best_moves))
 
@@ -126,7 +129,7 @@ class ScoreBot:
         mydead_value = -2.0
         theirdead_value = -1.0
 
-        owned_value = -200.0
+        owned_value = -20.0
 
         my_lms = board.legal_moves(self.myid)
 
@@ -185,7 +188,6 @@ class ScoreBot:
             for x,y in my_lms:
                 o = board.owned(x,y)
                 if o is not None:
-                    logging.info("{} owns {}".format(o,(x,y)))
                     owners[(x,y)] = o
                     values[(x,y)] += owned_value
 
